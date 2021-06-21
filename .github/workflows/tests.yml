@@ -41,8 +41,6 @@ jobs:
         run: sleep 15
       - name: Show database logs
         run: docker-compose logs db
-      - name: Load test fixtures
-        run: docker-compose run --rm db_shell execute test_data
       - name: Start auth server
         run: docker-compose up -d mock_auth_server
       - name: Await auth server
@@ -58,12 +56,8 @@ jobs:
       - name: Install testing dependencies
         working-directory: services/http/api
         run: yarn
-      - name: Building Tests
-        working-directory: services/http/api
-        run: yarn build
       - name: Run tests
-        working-directory: services/http/api
-        run: yarn test
+        run: yarn test:api
         timeout-minutes: 1
       - name: Show complete server logs
         if: always()

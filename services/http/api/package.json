@@ -14,7 +14,9 @@
     "mock:api": "prism mock ./reference/bb-api.v0.yaml",
     "mock:auth": "cd tests/mocks/auth_server && yarn start",
     "start:dev": "concurrently --kill-others 'yarn start:lazy' 'yarn mock:auth'",
-    "all": "yarn install && cd tests/mocks/auth_server && yarn install"
+    "all": "yarn install && cd tests/mocks/auth_server && yarn install",
+    "load:test": "ts-node tests/testData.ts",
+    "load:examples": "ts-node ./lib/fixtures/example.ts"
   },
   "author": "bipolarbridges",
   "license": "MIT",

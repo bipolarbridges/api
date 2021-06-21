@@ -2,7 +2,6 @@ import { InternalError } from '../errors';
 import { Neogma } from 'neogma';
 import { debug } from '../logging'
 import { initAllModels } from '../models/initializers';
-import { DatabaseResponse } from 'lib/auth/auth_methods';
 import { Parameters } from 'neo4j-driver/types/query-runner';
 import { Driver, Result, Session } from 'neo4j-driver';
 import { TransactionConfig } from 'neo4j-driver-core';
@@ -13,6 +12,8 @@ class DatabaseError extends InternalError {
         super(error);
     }
 }
+
+export type DatabaseProcedure<T> = (session: Session, all: allModels) => Promise<T>;
 
 export class Database {
     driver: Driver | null;
@@ -43,8 +44,8 @@ export class Database {
         this.initialized = true;
     }
 
-    async exec (proc: (session: Session, all: allModels) => DatabaseResponse): Promise<boolean | null> {
-        const session: Session = this.driver.session();
+    async exec<T> (proc: DatabaseProcedure<T>): Promise<T> {
+        const session = this.driver.session();
         try {
             const ret = await proc(session, this.models);
             return ret
@@ -75,9 +76,3 @@ export function database(): Database {
     return db
 }
 
-/*
-Type 
-'import("/home/kaede/Documents/polarus/data-services/services/http/api/node_modules/neogma/node_modules/neo4j-driver/types/driver").Driver' 
-is not assignable to type 
-'import("/home/kaede/Documents/polarus/data-services/services/http/api/node_modules/neo4j-driver/types/driver").Driver'.
-*/

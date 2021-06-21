@@ -1,4 +1,5 @@
 import * as loggers from '../logging';
+import { DatabaseProcedure } from 'lib/db';
 import { Session } from 'neo4j-driver';
 import { allModels } from 'lib/models';
 import { DayProperties, HourProperties, TimestampProperties, YearProperties } from 'lib/models/time';
@@ -7,7 +8,7 @@ import { UserProperties } from 'lib/models/user';
 import { SourceProperties } from 'lib/models/source';
 
 
-function userExists(id: string) {
+function userExists(id: string): DatabaseProcedure<boolean> {
     return async (session: Session, models: allModels): Promise<boolean> => {
         try {
             const user = await models.user.findOne({
@@ -26,7 +27,7 @@ function userExists(id: string) {
     }
 }
 
-function createUser(id: string) {
+function createUser(id: string): DatabaseProcedure<boolean>{
     return async (session: Session, models: allModels): Promise<null> => {
         try {
             await models.user.createOne(

@@ -2,6 +2,9 @@
     "compilerOptions": {
         "module": "CommonJS",
         "outDir": "./dist",
+        "lib": [
+            "ESNext"
+        ],
         "noImplicitAny": true,
         "esModuleInterop": true,
         "sourceMap": true,
@@ -10,21 +13,10 @@
         "strictBindCallApply": true,
         "moduleResolution": "node",
         "baseUrl": ".",
-        "paths": {
-            "db/*": ["lib/db/index.ts"],
-            "errors/*": ["/lib/errors/index.ts"],
-            "interface/*": ["/lib/interface/index.ts"],
-            "logging/*": ["/lib/logging/index.ts"],
-            "requests/*": ["/lib/requests/index.ts"],
-            "*": [
-              "*",
-              "node_modules/*"
-            ]
-        }
+        "skipLibCheck": true
     },
     "exclude": [
         "./tests/mocks/auth_server",
-        "./dist",
         "node_modules",
         ".eslintrc.js"
     ]

@@ -1,5 +1,6 @@
 // eslint-disable-next-line no-undef
 module.exports = {
-  preset: 'ts-jest',
+  testPathIgnorePatterns: ["/node_modules/", ".spec.ts"],
   testEnvironment: 'node',
+  "verbose": false
 };

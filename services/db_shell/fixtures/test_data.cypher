@@ -2,6 +2,7 @@ CREATE (:User{uid: "client0@email.com"});
 
 CREATE (:Resource{path: "/client"});
 CREATE (:Resource{path: "/measurement"});
+CREATE (:Resource{path: "/"});
 
 CREATE (:Identity{
     type: "key",

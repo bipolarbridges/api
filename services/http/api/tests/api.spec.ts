@@ -32,8 +32,9 @@ function spec(method: string, path: string) {
 
 function match(method: string, path: string, body: unknown, opts: AxiosRequestConfig, status: number, desc = 'Unspecified') {
   describe(`${method} ${path} [ ${status}: ${desc} ]`, () => {
-    const fnc = methods[method];
-    if (!fnc) {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const _f_ = methods[method];
+    if (!_f_) {
       console.log(`WARNING: invalid method specified ${method}`);
     } else {
       it('Should match API spec', async () => methods[method](`${path}`, body, opts)
@@ -45,7 +46,6 @@ function match(method: string, path: string, body: unknown, opts: AxiosRequestCo
         })
         .catch((err) => {
           if (!err.response) {
-            console.log(err);
             fail();
           } else {
             const res = err.response;
@@ -130,7 +130,7 @@ describe('Paths', () => {
               expect(res3.data.message).toEqual('Already exists');
             });
           }).catch((err: AxiosError) => {
-            console.log(err.response.data);
+            console.log(err?.response?.data);
             fail();
           });
         });
@@ -180,7 +180,7 @@ describe('Paths', () => {
             expect(res.status).toEqual(200);
           })
           .catch((err) => {
-            console.log(err.response.data);
+            console.log('message', err?.response);
             fail();
           });
       });
@@ -220,11 +220,11 @@ describe('Paths', () => {
               expect(res2.status).toEqual(200);
             })
             .catch((err) => {
-              console.log(err.response.data);
+              console.log(err?.response?.error);
               fail();
             });
         }).catch((err) => {
-          console.log(err.response.data);
+          console.log(err?.response?.error);
           fail();
         });
       });
@@ -235,8 +235,9 @@ describe('Paths', () => {
       clientID: 'client0@email.com',
       data: {
         date: 1610997441,
-        dataType: 'sentiment',
-        value: 0.8,
+        name: 'sentiment',
+        value: 0.2,
+        source: 'measurement',
       },
     };
     it('Should reject if a bad key is provided', async () => {
@@ -256,37 +257,57 @@ describe('Paths', () => {
         expect(res.status).toEqual(403);
       });
     });
+
     const invalidData = [
       // Missing fields
       {
+        // clientID: ...
         data: {
           date: 1610997441,
-          dataType: 'sentiment',
+          name: 'sentiment',
           value: 0.8,
+          source: 'measurement',
+
         },
       },
       {
         clientID: 'client2@email.com',
+        // data: ...
       },
       {
         clientID: 'client2@email.com',
         data: {
-          dataType: 'sentiment',
+          // data: ...
+          name: 'sentiment',
           value: 0.8,
+          source: 'measurement',
         },
       },
       {
         clientID: 'client2@email.com',
         data: {
           date: 1610997441,
-          value: 0.8,
+          // name: ...
+          value: 1.3,
+          source: 'measurement',
         },
       },
       {
         clientID: 'client2@email.com',
         data: {
           date: 1610997441,
-          dataType: 'sentiment',
+          name: 'sentiment',
+          // value: ...,
+          source: 'measurement',
+        },
+      },
+      {
+        clientID: 'client2@email.com',
+        data: {
+          date: 1610997433,
+          name: 'sentiment',
+          value: 1.3,
+          // source: ...
         },
       },
       // Bad typing examples
@@ -317,6 +338,7 @@ describe('Paths', () => {
           expect(res.status).toEqual(400);
         })));
       });
+
     it('Should respond properly upon success', async () => {
       await ax.post('/measurement', validExampleData, {
         headers: {
@@ -331,6 +353,7 @@ describe('Paths', () => {
         fail();
       });
     });
+
     it('Should reject if client does not exist', async () => {
       await ax.post('/measurement', {
         clientID: 'doesnotexist@email.com',
@@ -344,6 +367,7 @@ describe('Paths', () => {
         fail('Should have rejected');
       }).catch((err) => {
         if (!err.response) {
+          console.log(err);
           fail();
         }
         const res = err.response;

@@ -58,7 +58,7 @@ jobs:
       - name: Install testing dependencies
         working-directory: services/http/api
         run: yarn
-      - name: Build test
+      - name: Build tests
         working-directory: services/http/api
         run: yarn build
       - name: Run tests

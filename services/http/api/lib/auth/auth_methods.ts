@@ -2,14 +2,13 @@ import { readFileSync } from 'fs';
 import path, { join } from 'path';
 import { BinaryLike, createHash } from 'crypto';
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-
-// import {Database} from '../db';
 import { Request } from 'express';
-import { Session } from 'neo4j-driver-core';
+import { Session } from 'neo4j-driver';
 import { InternalError } from '../errors';
 import { info } from '../logging';
 
-const DIR_NAME = path.resolve();
+/* eslint-disable @typescript-eslint/naming-convention */
+const __dirname = path.resolve();
 
 class AuthError extends InternalError {
   constructor(error: string) {
@@ -30,7 +29,7 @@ type Configuration = {
   }
 };
 
-const configFile: Configuration = JSON.parse(readFileSync(join(DIR_NAME, 'lib/auth', 'config.json'), 'utf8'));
+const configFile: Configuration = JSON.parse(readFileSync(join(__dirname, 'lib/auth', 'config.json'), 'utf8'));
 const config = configFile.auth_server;
 info('Config: ', config);
 
@@ -73,6 +72,7 @@ export type DatabaseResponse = Promise<boolean | null>;
 export const authMethods: AuthMethod[] = [
   (req: Request, auth: BinaryLike) => async (db: Session): Promise<boolean | null> => {
     // KEY AUTHENTICATION
+    info(`Path: ${req.path}`);
     const results = await db.run(
       "MATCH (i:Identity{type: 'key', check: $check}) "
             + 'MATCH (r:Resource{path: $path}) '

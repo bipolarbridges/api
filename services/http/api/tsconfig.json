@@ -2,9 +2,6 @@
     "compilerOptions": {
         "module": "CommonJS",
         "outDir": "./dist",
-        "lib": [
-            "ESNext"
-        ],
         "noImplicitAny": true,
         "esModuleInterop": true,
         "sourceMap": true,
@@ -16,9 +13,9 @@
         "skipLibCheck": true
     },
     "exclude": [
+        "./dist",
         "./tests/mocks/auth_server",
         "node_modules",
-        ".eslintrc.js"
+        ".eslintrc.js",
     ]
-    
 }

@@ -1,5 +1,11 @@
-import { Session } from 'neo4j-driver-core';
-import { AllModels } from 'lib/models/initializers';
+import { Session } from 'neo4j-driver';
+import { AllModels } from 'lib/models';
+import {
+  DayProperties, HourProperties, TimestampProperties, YearProperties,
+} from 'lib/models/time';
+import { MeasurementProperties, MeasurementTypeProperties } from 'lib/models/measurement';
+import { UserProperties } from 'lib/models/user';
+import { SourceProperties } from 'lib/models/source';
 import * as loggers from '../logging';
 
 function userExists(id: string) {
@@ -39,9 +45,8 @@ function createUser(id: string) {
               },
             ],
           },
-
         },
-        { session },
+        { merge: true, session },
       );
 
       return null;
@@ -49,6 +54,146 @@ function createUser(id: string) {
       loggers.error(err);
       return null;
     }
+  };
+}
+
+// named with format VerbModelArgs
+export type CreateMeasurementArgs = {
+  uid: string,
+  value: number,
+  name: string,
+  source: string,
+  date: number,
+};
+
+type MergeConfig = {
+  nodes: boolean,
+  relationship: boolean,
+};
+
+type MergeProperties = {
+  Hour: {
+    propertiesMergeConfig: MergeConfig,
+    properties: HourProperties[]
+  },
+  Day: DayMergeProperties,
+  Month: MonthMergeProperties,
+  Year: {
+    propertiesMergeConfig: MergeConfig,
+    properties: YearProperties[]
+  },
+  Timestamp: {
+    propertiesMergeConfig: MergeConfig,
+    properties: TimestampProperties[]
+  },
+  User?: UserMergeProperties,
+  MeasurementType?: {
+    propertiesMergeConfig: MergeConfig,
+    properties: CombinedTypeSource[]
+  }
+};
+
+type UserMergeProperties = {
+  propertiesMergeConfig: MergeConfig,
+  properties: UserProperties[]
+};
+
+type MeasurementTypeMergeProperties = {
+  propertiesMergeConfig: MergeConfig,
+  properties: CombinedTypeSource[],
+};
+
+type DayMergeProperties = {
+  propertiesMergeConfig: MergeConfig,
+  properties: DayProperties[]
+};
+
+type MonthMergeProperties = {
+  propertiesMergeConfig: MergeConfig,
+  properties: {
+    month: number,
+    Day?: DayMergeProperties
+  }[]
+};
+
+type SourceMergeProperties = {
+  propertiesMergeConfig: MergeConfig,
+  properties: SourceProperties[],
+};
+
+type CombinedTypeSource = MeasurementTypeProperties & { Source: SourceMergeProperties };
+
+export type MergedMeasurement = MeasurementProperties & MergeProperties;
+
+export function makeMeasurementProperties(value: number,
+  hour: number,
+  day: number,
+  month: number,
+  year: number,
+  time: number,
+  User?: UserMergeProperties,
+  MeasurementType?: MeasurementTypeMergeProperties): MergedMeasurement {
+  return {
+    value,
+    Hour: {
+      propertiesMergeConfig: {
+        nodes: true,
+        relationship: false,
+      },
+      properties: [
+        { hour },
+      ],
+    },
+    Day: {
+      propertiesMergeConfig: {
+        nodes: true,
+        relationship: false,
+      },
+      properties: [
+        { day },
+      ],
+    },
+    Month: {
+      propertiesMergeConfig: {
+        nodes: true,
+        relationship: false,
+      },
+      properties: [
+        {
+          month,
+          Day: {
+            propertiesMergeConfig: {
+              nodes: true,
+              relationship: true,
+            },
+            properties: [
+              { day },
+            ],
+          },
+        },
+      ],
+    },
+    Year: {
+      propertiesMergeConfig: {
+        nodes: true,
+        relationship: true,
+      },
+      properties: [
+        { year },
+      ],
+    },
+    Timestamp: {
+      propertiesMergeConfig: {
+        nodes: true,
+        relationship: false,
+      },
+      properties: [
+        { time },
+      ],
+    },
+    User,
+    MeasurementType,
+
   };
 }
 
@@ -64,59 +209,71 @@ function transformDate(input: number) {
   const month = date.getMonth();
   const day = date.getDate();
   const time = date.getTime();
+  const hour = date.getHours();
 
   return {
     year,
     month,
     day,
+    hour,
     time,
   };
 }
 
-// named with format VerbModelArgs
-export type CreateMeasurementArgs = {
-  date: number,
-  uid: string,
-  type: string,
-  value: number
-};
-
 function createMeasurement(m: CreateMeasurementArgs) {
   return async (session: Session, models: AllModels): Promise<boolean> => {
-    const date = transformDate(m.date);
     try {
-      await models.measurement.createOne(
+      const {
+        year, month, day, hour, time,
+      } = transformDate(m.date);
+      const {
+        uid, source, value, name,
+      } = m;
+
+      const User = {
+        propertiesMergeConfig: {
+          nodes: true,
+          relationship: true,
+
+        },
+        properties: [{
+          uid,
+        }],
+      };
+
+      const Measurement = {
+        propertiesMergeConfig: {
+          nodes: false,
+          relationship: false,
+        },
+        properties: [makeMeasurementProperties(value, hour, day, month, year, time, User)],
+      };
+
+      const Source = {
+        propertiesMergeConfig: {
+          nodes: true,
+          relationship: true,
+
+        },
+        properties: [
+          {
+            name: source,
+          },
+        ],
+      };
+
+      await models.measurementType.createOne(
         {
-          type: m.type,
-          value: m.value,
-          User: {
-            propertiesMergeConfig: {
-              nodes: true,
-              relationship: true,
-            },
-            properties: [{
-              uid: m.uid,
-            }],
-          },
-          Date: {
-            propertiesMergeConfig: {
-              nodes: true,
-              relationship: true,
-            },
-            properties: [{
-              id: `${date.year}-${date.month}-${date.day}`,
-              time: date.time,
-              day: date.day,
-              month: date.month,
-              year: date.year,
-            }],
-          },
+          name,
+          Measurement,
+          Source,
         },
         { session, merge: true },
       );
       return true;
     } catch (err) {
       loggers.error(err);
+      loggers.error(err?.data?.errors);
       return false;
     }
   };

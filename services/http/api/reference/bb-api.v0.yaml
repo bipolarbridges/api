@@ -175,13 +175,15 @@ paths:
                   required:
                     - date
                     - value
-                    - dataType
+                    - source
                   properties:
                     date:
                       type: number
                     value:
                       type: number
-                    dataType:
+                    source:
+                      type: string
+                    subtype: 
                       type: string
               required:
                 - clientID

@@ -28,7 +28,6 @@ services:
     command: "yarn start"
 networks:
   default:
-    external:
-      name: bb_default
+    name: bb_default
 volumes:
   store:
